@@ -1,0 +1,8 @@
+1.创建portfile.cmake，仅需修改SOURCE_PATH，使用绝对路
+2.创建vcpkg.json,修改名称，描述以及依赖
+3.创建usae，按实际情况修改
+4.在根目录下创建LICENSE
+# 如没有依赖则直接安装（项目根目录下打开powershell）：vcpkg install common-utils --overlay-ports=ports/common-utils --triplet=x64-mingw-dynamic
+4.将自定义的port在vckpg安装目录下的port文件夹创建软连接（好处是有依赖时能自动找到），管理员身份运行powershell
+    New-Item -ItemType SymbolicLink -Path "common-utils" -Target "D:\Documents\CLionProjects\Qt\Projects\common_utils\ports\common-utils"
+5. 安装 vcpkg install common-utils:x64-mingw-dynamic

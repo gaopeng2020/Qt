@@ -1,0 +1,10 @@
+{
+  "name": "common-utils",
+  "version": "1.0.0",
+  "description": "Common utilities library for Qt and Xlsx operations",
+  "homepage": "https://github.com/your-repo/common-utils",
+  "license": "MIT",
+  "dependencies": [
+    "qxlsx"
+  ]
+}
