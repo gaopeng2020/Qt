@@ -159,13 +159,6 @@
                         </property>
                     </widget>
                 </item>
-                <item>
-                    <layout class="QHBoxLayout" name="buttonLayout">
-                        <property name="spacing">
-                            <number>10</number>
-                        </property>
-                    </layout>
-                </item>
             </layout>
         </widget>
         <widget class="QMenuBar" name="menubar">
@@ -178,7 +171,7 @@
                 </rect>
             </property>
         </widget>
-        <widget class="QStatusBar" name="statusbar"/>
+<!--        <widget class="QStatusBar" name="statusbar"/>-->
         <widget class="QToolBar" name="toolBar">
             <property name="windowTitle">
                 <string>工具栏</string>
