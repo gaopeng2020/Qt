@@ -1,10 +1,9 @@
 #ifndef ADT_CONSISTENCY_CHECK_APP_H
 #define ADT_CONSISTENCY_CHECK_APP_H
 
-#include "./ui_AdtConsistencyCheckApp.h"
-#include "CommonUtils/common_utils.h"
+#include "ui_AdtConsistencyCheckApp.h"
 #include "DataTypeConsistencyCheck.h"
-#include <QFileDialog>
+#include <QMainWindow>
 
 QT_BEGIN_NAMESPACE
 
@@ -31,8 +30,9 @@ private slots:
 
 private:
     QString fileName;
-    common_utils utils;
     Ui::AdtConsistencyCheckApp *ui;
     std::unique_ptr<DataTypeConsistencyCheck> dataTypeChecker;
+
+    void outputErrors2TextEdit() const;
 };
 #endif // ADT_CONSISTENCY_CHECK_APP_H

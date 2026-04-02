@@ -4,7 +4,8 @@
 #include <QApplication>
 
 int main(int argc, char *argv[]) {
-    Logger::Init("");
+    Logger::Init(argv[0]);
+    std::cout<<"-------------------"<<std::endl;
     QApplication a(argc, argv);
 
     //在退出时调用Logger::Shutdown();

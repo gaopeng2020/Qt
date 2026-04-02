@@ -4,25 +4,28 @@ cmake_minimum_required(VERSION 3.16)
 #  常用值：x64-windows (MSVC)、x64-mingw-dynamic (MinGW动态)、x64-mingw-static (MinGW静态)
 set(VCPKG_TARGET_TRIPLET "x64-mingw-dynamic" CACHE STRING "vcpkg triplet")
 
-project(AdtConsistencyCheck VERSION 0.1 LANGUAGES CXX)
+project(AdtConsistencyCheck VERSION 1.0.0 LANGUAGES CXX)
 
+#ui不在根目录时必须告诉cmake ui的路径
+set(CMAKE_AUTOUIC_SEARCH_PATHS "ui")
 set(CMAKE_AUTOUIC ON)
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
-find_package(CommonUtilsLib REQUIRED)
-find_package(glog CONFIG REQUIRED)
-
 set(PROJECT_SOURCES
         main.cpp
-        AdtConsistencyCheckApp.cpp
-        DataTypeConsistencyCheck.cpp
+        src/AdtConsistencyCheckApp.cpp
+        src/DataTypeConsistencyCheck.cpp
+        #h,cpp以及ui分类存放时，必须添加头文件以及ui，否则找不到ui_xxx.h
+        include/AdtConsistencyCheckApp.h
+        include/DataTypeConsistencyCheck.h
+        ui/AdtConsistencyCheckApp.ui
 )
 
 if (${QT_VERSION_MAJOR} GREATER_EQUAL 6)
@@ -44,14 +47,25 @@ else ()
         # Define properties for Android with Qt 5 after find_package() calls as:
         #    set(ANDROID_PACKAGE_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/android")
     else ()
-        add_executable(${PROJECT_NAME}
-                ${PROJECT_SOURCES}
+        add_executable(${PROJECT_NAME} ${PROJECT_SOURCES}
         )
     endif ()
 endif ()
 
+# h,cpp以及ui分类存放时才需要
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
+
 target_link_libraries(${PROJECT_NAME} PRIVATE Qt${QT_VERSION_MAJOR}::Widgets)
-target_link_libraries(${PROJECT_NAME} PRIVATE CommonUtilsLib::CommonUtilsLib glog::glog)
+
+#find_package(CommonUtilsLib REQUIRED)
+#find_package(glog CONFIG REQUIRED)
+#target_link_libraries(${PROJECT_NAME} PRIVATE CommonUtilsLib::CommonUtilsLib glog::glog)
+
+find_package(common-utils CONFIG REQUIRED)
+target_link_libraries(${PROJECT_NAME} PRIVATE common-utils::common-utils)
+
 # 构建时复制conf文件到CMAKE_BINARY_DIR
 add_custom_command(
         TARGET ${PROJECT_NAME} PRE_BUILD
