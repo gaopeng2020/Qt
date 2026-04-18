@@ -5,19 +5,17 @@
 #ifndef DATATYPECONSISTENCYCHECK_H
 #define DATATYPECONSISTENCYCHECK_H
 
-#include <unordered_set>
-#include <string>
-#include <set>
 #include <common-utils/xlsx.h>
+#include <set>
+#include <string>
+#include <unordered_set>
 
-class DataTypeConsistencyCheck{
+class DataTypeConsistencyCheck {
     friend class ValueConsistencyCheck;
 
 protected:
-    const std::unordered_set<std::string> BASIC_TYPES = {
-        "bool", "uint8", "uint16", "uint32", "uint64",
-        "sint8", "sint16", "sint32", "sint64", "float32", "float64", "\\"
-    };
+    const std::unordered_set<std::string> BASIC_TYPES = {"bool",   "uint8",  "uint16", "uint32",  "uint64",  "sint8",
+                                                         "sint16", "sint32", "sint64", "float32", "float64", "\\"};
     int dataTypeNameCol;
     int categoryCol;
 
@@ -43,9 +41,7 @@ protected:
 public:
     [[nodiscard]] std::list<std::string> getErrors() const { return errors; }
 
-    void set_file_path(const std::string& file_path) {
-        filePath = file_path;
-    }
+    void set_file_path(const std::string& file_path) { filePath = file_path; }
     explicit DataTypeConsistencyCheck();
     explicit DataTypeConsistencyCheck(std::string& filePath);
     ~DataTypeConsistencyCheck() = default;
@@ -54,14 +50,10 @@ public:
 private:
     std::set<std::string> dataTypeNames;
     void recordConsistencyCheck(const OpenXLSX::XLWorksheet& sheet, int startRow, int endRow);
-    void recordElementTypeRefDefine(const OpenXLSX::XLWorksheet& sheet, int row, const std::string& memTypeRef);
-    void recordElementTypeDirectDefine(const OpenXLSX::XLWorksheet& sheet, int row, const std::string& memTypeRef);
 
     void arrayConsistencyCheck(const OpenXLSX::XLWorksheet& sheet, int row);
-    void arrayElementTypeRefDefine(const OpenXLSX::XLWorksheet& sheet, int row, const std::string& memTypeRef);
-    void arrayElementTypeDirectDefine(const OpenXLSX::XLWorksheet& sheet, int row, const std::string& memTypeRef);
 
-    void unusedCellForBasicType(const OpenXLSX::XLWorksheet& sheet, int row);
+    void unusedCellForRefType(const OpenXLSX::XLWorksheet& sheet, int row);
 
     void checkDataType(const OpenXLSX::XLWorksheet& sheet);
     void valueConsistencyCheck(const OpenXLSX::XLWorksheet& sheet, int row);
@@ -71,5 +63,4 @@ private:
     void checkSignalLength(double maxValue, int len, int row);
 };
 
-
-#endif //DATATYPECONSISTENCYCHECK_H
+#endif // DATATYPECONSISTENCYCHECK_H

@@ -3,7 +3,7 @@
 #include <QFileDialog>
 #include <common-utils/core.h>
 
-using namespace common_utils;
+using namespace common_utils::core;
 
 AdtConsistencyCheckApp::AdtConsistencyCheckApp(QWidget* parent) : QMainWindow(parent),
                                                                   ui(new Ui::AdtConsistencyCheckApp) {
