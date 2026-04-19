@@ -61,12 +61,13 @@ Thumbs.db
 *vcxproj.*
 
 # MinGW generated files
-*.Debug
-*.Release
-*.cmake-build-debug
-*.cmake-build-release
-*.idea
-*.sln
+build
+Debug
+Release
+cmake-build-debug
+cmake-build-release
+.idea
+.sln
 
 # Python byte code
 *.pyc
