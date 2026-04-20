@@ -359,7 +359,7 @@ void DataTypeConsistencyCheck::checkDataType(const OpenXLSX::XLWorksheet& sheet)
         return;
     }
     errors.emplace_back("[Info] 请确保conf目录下的excel文件是最新的，否则无法准确识别数据类型是否与库中已有的Adt重复");
-
+    errors.emplace_back("-----------------------------------------------------------------------------------------------");
     OpenXLSX::XLDocument doc;
     if (!Xlsx::openXlDocument(doc, libXlsx)) {
         log_error("Adt", "Failed to open lib xlsx file: " + libXlsx);
@@ -598,7 +598,7 @@ int DataTypeConsistencyCheck::checkValueTable(const std::string& valueTable, con
             }
 
             // 检查是否符合 C 变量命名规范
-            if (!Core::isValidCVariableName(Core::stringFormat(enumName), 16)) {
+            if (!Core::isValidCVariableName(Core::stringFormat(enumName), 16, false)) {
                 std::string errorMsg = "[Error] " + cellAddress;
                 errorMsg += ": 第";
                 errorMsg += std::to_string(lineNumber);
@@ -662,7 +662,7 @@ int DataTypeConsistencyCheck::checkBitField(const std::string& valueTable, const
             static const std::regex varNameRegex(R"([=:：]\s*([^\(]+)\s*\()");
             if (std::smatch match; std::regex_search(trimmedStr, match, varNameRegex)) {
                 if (label = Core::stringTrim(match.str(1));
-                    !label.empty() && !Core::isValidCVariableName(Core::stringFormat(label), 16)) {
+                    !label.empty() && !Core::isValidCVariableName(Core::stringFormat(label), 16, false)) {
                     std::string errorMsg = "[Error] " + cellAddress;
                     errorMsg += ": 第";
                     errorMsg += std::to_string(lineNumber);
@@ -687,7 +687,7 @@ int DataTypeConsistencyCheck::checkBitField(const std::string& valueTable, const
 
             // 检查括号内变量symbol是否符合 C 变量命名规范
             for (std::list<std::string> variables = extractBitFieldVariable(symbols); const auto& var : variables) {
-                if (!Core::isValidCVariableName(Core::stringFormat(var), 16)) {
+                if (!Core::isValidCVariableName(Core::stringFormat(var), 16, false)) {
                     std::string errorMsg = "[Error] " + cellAddress;
                     errorMsg += ": 第";
                     errorMsg += std::to_string(lineNumber);
@@ -784,7 +784,7 @@ void DataTypeConsistencyCheck::recordConsistencyCheck(const OpenXLSX::XLWorkshee
 /*======================================Array check============================================*/
 void DataTypeConsistencyCheck::arrayConsistencyCheck(const OpenXLSX::XLWorksheet& sheet, const int row) {
     // 检查数组类型
-    if (const std::string arrayType = Xlsx::getCellValue(sheet.cell(row, lenTypeCol)); arrayType != "Fix") {
+    if (const std::string arrayType = Xlsx::getCellValue(sheet.cell(row, lenTypeCol)); arrayType != "Fixed") {
         errors.emplace_back("[Error]" + Core::numToCellAddress(row, lenTypeCol) +
                             " 仅支持定长数组，数组类长度型必须为 Fixed，实际为：" + arrayType);
     }

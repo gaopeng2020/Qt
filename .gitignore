@@ -62,10 +62,8 @@ Thumbs.db
 
 # MinGW generated files
 build
-Debug
-Release
-cmake-build-debug
-cmake-build-release
+cmake-build-debug*
+cmake-build-release*
 .idea
 .sln
 
