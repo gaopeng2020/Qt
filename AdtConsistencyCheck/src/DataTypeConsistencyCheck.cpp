@@ -421,22 +421,22 @@ void DataTypeConsistencyCheck::valueConsistencyCheck(const OpenXLSX::XLWorksheet
     // 无需填写的单元格检查（不适用 Value）
     std::string result;
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, memPosiCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memPosiCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memPosiCol) + " value类型此处无需填写或用/或\\填充");
 
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, memNameCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memNameCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memNameCol) + " value类型此处无需填写或用/或\\填充");
 
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, memTypeRefCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memTypeRefCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, memTypeRefCol) + " value类型此处无需填写或用/或\\填充");
 
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, lenTypeCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, lenTypeCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, lenTypeCol) + " value类型此处无需填写或用/或\\填充");
 
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, minLenCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, minLenCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, minLenCol) + " value类型此处无需填写或用/或\\填充");
 
     if (!isUnusedCell(Xlsx::getCellValue(sheet.cell(row, maxLenCol))))
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, maxLenCol) + "value类型此处无需填写或用/或\\填充");
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, maxLenCol) + " value类型此处无需填写或用/或\\填充");
     // 必须填写的单元格检查
     checkMustDefinedCell(sheet, row);
 }
@@ -444,7 +444,7 @@ void DataTypeConsistencyCheck::valueConsistencyCheck(const OpenXLSX::XLWorksheet
 void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet& sheet, const int row) {
     if (const auto baseType = Xlsx::getCellValue(sheet.cell(row, baseTypeCol)); !BASIC_TYPES.contains(baseType))
         errors.emplace_back("[Error] " + Core::numToCellAddress(row, baseTypeCol) +
-                            "基础数据类型不在支持的范围内，仅支持"
+                            " 基础数据类型不在支持的范围内，仅支持"
                             "{bool,uint8,uint16,uint32,uint64,sint8,"
                             "sint16,sint32,sint64,float32,float64,\\}");
 
@@ -535,21 +535,21 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
 
         if (!isMinNum)
             errors.emplace_back("[Error] " + Core::numToCellAddress(row, minPhyCol) +
-                                "Value 类型如果没有枚举或位域，物理最小值必须填写数字");
+                                " Value 类型如果没有枚举或位域，物理最小值必须填写数字");
         if (!isMaxNum) {
             errors.emplace_back("[Error] " + Core::numToCellAddress(row, maxPhyCol) +
-                                "Value 类型如果没有枚举或位域，物理最大值必须填写数字");
+                                " Value 类型如果没有枚举或位域，物理最大值必须填写数字");
         }
         if (!isFactor) {
             errors.emplace_back("[Error] " + Core::numToCellAddress(row, factorCol) +
-                                "Value 类型如果没有枚举或位域，resolution 必须填写数字");
+                                " Value 类型如果没有枚举或位域，resolution 必须填写数字");
         }
         if (!isOffset) {
             errors.emplace_back("[Error] " + Core::numToCellAddress(row, offsetCol) +
-                                "Value 类型如果没有枚举或位域，offset 必须填写数字");
+                                " Value 类型如果没有枚举或位域，offset 必须填写数字");
         }
         if (isMaxNum && isMinNum && max <= min)
-            errors.emplace_back("[Error] " + Core::numToCellAddress(row, maxPhyCol) + "物理最大值应大于物理最小值>");
+            errors.emplace_back("[Error] " + Core::numToCellAddress(row, maxPhyCol) + " 物理最大值应大于物理最小值>");
         if (isFactor && isOffset && isMaxNum && isSignal) {
             // phy to raw value (phy = raw*factor + offset)
             const double rawMax = (max - o) / f;
@@ -558,7 +558,7 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
         }
     } else if (methodType == compuMethodType::NOT_SUPPORTED) {
         errors.emplace_back("[Error] " + tableCellAddr +
-                            "不支持的类型，valueTable 中有枚举或位域的定义，但 "
+                            " 不支持的类型，valueTable 中有枚举或位域的定义，但 "
                             "factor!=1 或 offset!=0");
     }
 }
@@ -713,7 +713,7 @@ int DataTypeConsistencyCheck::checkBitField(const std::string& valueTable, const
 
 void DataTypeConsistencyCheck::checkSignalLength(const double maxValue, const int len, const int row) {
     if (pow(2, len) - 1 < maxValue)
-        errors.emplace_back("[Error] " + Core::numToCellAddress(row, sigLenCol) + ": " + "信号长度太短或无效，最小应该为：" +
+        errors.emplace_back("[Error] " + Core::numToCellAddress(row, sigLenCol) + ": " + " 信号长度太短或无效，最小应该为：" +
                             std::to_string(static_cast<int>(ceil(log2(maxValue + 1)))));
 }
 

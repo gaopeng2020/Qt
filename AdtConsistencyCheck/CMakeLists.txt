@@ -20,7 +20,7 @@ find_package(QT NAMES Qt6 Qt5 REQUIRED COMPONENTS Widgets)
 find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Widgets)
 
 set(PROJECT_SOURCES
-        main.cpp
+        src/main.cpp
         src/AdtConsistencyCheckApp.cpp
         src/DataTypeConsistencyCheck.cpp
         #h,cpp以及ui分类存放时，必须添加头文件以及ui，否则找不到ui_xxx.h
