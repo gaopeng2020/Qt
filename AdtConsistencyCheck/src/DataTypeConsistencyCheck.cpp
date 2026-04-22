@@ -460,7 +460,8 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
 
     if (!isSignal) errors.emplace_back("[Error] " + Core::numToCellAddress(row, sigLenCol) + " Value类型，信号长度必须填写");
 
-    const auto valueTable = Xlsx::getCellValue(sheet.cell(row, tableCol));
+    auto valueTable = Xlsx::getCellValue(sheet.cell(row, tableCol));
+    valueTable = Core::stringReplace(valueTable,"：",":");
     const auto factor = Xlsx::getCellValue(sheet.cell(row, factorCol));
     const auto offset = Xlsx::getCellValue(sheet.cell(row, offsetCol));
 
