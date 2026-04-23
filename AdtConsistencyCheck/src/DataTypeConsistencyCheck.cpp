@@ -461,7 +461,7 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
     if (!isSignal) errors.emplace_back("[Error] " + Core::numToCellAddress(row, sigLenCol) + " Value类型，信号长度必须填写");
 
     auto valueTable = Xlsx::getCellValue(sheet.cell(row, tableCol));
-    valueTable = Core::stringReplace(valueTable,"：",":");
+    valueTable = Core::stringReplace(valueTable, "：", ":");
     const auto factor = Xlsx::getCellValue(sheet.cell(row, factorCol));
     const auto offset = Xlsx::getCellValue(sheet.cell(row, offsetCol));
 
@@ -767,8 +767,10 @@ void DataTypeConsistencyCheck::recordConsistencyCheck(const OpenXLSX::XLWorkshee
 
         } else { // 引用数据类型
             // 检查引用是否有定义
-            if (const std::string memTypeRef = Core::stringTrim(Xlsx::getCellValue(sheet.cell(row, memTypeRefCol)));
-                !dataTypeNames.contains(memTypeRef))
+            const std::string memTypeRef = Core::stringTrim(Xlsx::getCellValue(sheet.cell(row, memTypeRefCol)));
+
+            if (memTypeRef.find("CRC") == std::string::npos ||
+                memTypeRef.find("RollingCntr") == std::string::npos && !dataTypeNames.contains(memTypeRef))
                 errors.emplace_back("[Error] " + Core::numToCellAddress(row, memTypeRefCol) + ": " + memTypeRef +
                                     " 结构体成员引用数据类型未在表格中定义");
 
