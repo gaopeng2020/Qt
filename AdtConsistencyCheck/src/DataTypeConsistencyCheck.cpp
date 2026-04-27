@@ -114,29 +114,45 @@ std::list<int> extractNumbers(const std::string& input, const std::string& prefi
     std::list<int> numbers;
     std::string tmp = Core::stringReplace(input, "~", "-");
 
-    const bool isHex = prefix == "0x" || prefix == "0X";
-    const std::string numPattern = isHex ? "([0-9A-Fa-f]+)" : "([0-9]+)";
-    //(?:...) → 仅分组，不捕获（节省资源，编号更清晰）
-    const std::string patternStr = prefix + numPattern + "(?:" + "[-:：]" + prefix + numPattern + ")?";
+    const bool isHex = (prefix == "0x" || prefix == "0X");
+    const int base = isHex ? 16 : 10;
+
+    const std::string numPattern = (base == 16) ? "[0-9A-Fa-f]+" : (prefix.empty()) ? "[01]{1,3}" : "\\d+";
+
+    // 整个模式 = 第一部分 + (?: 分隔符 + 第二部分 )?
+    //        ↑          ↑                    ↑
+    //      必有      非捕获分组             整体可选
+    // "(?:[-]" + // 非捕获分组开始以及连字符
+    //  "(?:" + prefix + ")?" + // prefix 非必选
+    //  "(" + numPattern + ")" + // 数字
+    //   ")?" + 非捕获分组结束
+    const std::string patternStr =
+        prefix + "(" + numPattern + ")" + "(?:[-]" + "(?:" + prefix + ")?" + "(" + numPattern + ")" + ")?";
+
     const std::regex regex(patternStr, std::regex_constants::icase);
 
-    const auto begin = std::sregex_iterator(tmp.begin(), tmp.end(), regex);
-    const auto end = std::sregex_iterator();
+    auto searchStart = tmp.cbegin();
+    std::smatch match;
 
-    const int base = isHex ? 16 : 10;
-    for (auto it = begin; it != end; ++it) {
-        const std::smatch& match = *it;
-        const int first = std::stoi(match.str(1), nullptr, base);
+    // 使用 regex_search 循环，更可控
+    while (std::regex_search(searchStart, tmp.cend(), match, regex)) {
+        if (match.empty()) {
+            break; // 防止无限循环
+        }
+        int first = std::stoi(match[1].str(), nullptr, base);
         if (match[2].matched) {
-            const int second = std::stoi(match.str(2), nullptr, base);
+            const int second = std::stoi(match[2].str(), nullptr, base);
             for (int i = first; i <= second; ++i) {
                 numbers.push_back(i);
             }
         } else {
             numbers.push_back(first);
         }
+        searchStart = match[0].second; // 移动到匹配结束位置
     }
+
     numbers.sort();
+    numbers.unique();
     return numbers;
 }
 
@@ -282,7 +298,7 @@ void DataTypeConsistencyCheck::readDataType() {
         return;
     }
 
-    auto sheet = doc.workbook().worksheet(5);
+    auto sheet = doc.workbook().worksheet(1);
     auto sheetName = "[Info] Active Worksheet : " + sheet.name();
     log_info("Adt", sheetName);
     errors.emplace_back(sheetName);
@@ -356,24 +372,21 @@ void DataTypeConsistencyCheck::checkDataType(const OpenXLSX::XLWorksheet& sheet)
     if (libXlsx.empty()) {
         errors.emplace_back(
             "[Error] 在conf文件夹下未发现excel文件，请从X平台导出最新的Adt清单并放在conf目录，文件名称随意，但后缀必须是xlsx");
-        return;
     }
     errors.emplace_back("[Info] 请确保conf目录下的excel文件是最新的，否则无法准确识别数据类型是否与库中已有的Adt重复");
     errors.emplace_back("-----------------------------------------------------------------------------------------------");
-    OpenXLSX::XLDocument doc;
-    if (!Xlsx::openXlDocument(doc, libXlsx)) {
-        log_error("Adt", "Failed to open lib xlsx file: " + libXlsx);
-        return;
-    }
-    const auto lisSheet = doc.workbook().worksheet(1);
-    if (Xlsx::getCellValue(lisSheet.cell(1, 1)) != "ADT Name")
-        errors.emplace_back(
-            "[Error] conf目录下的excel文件第一个sheet的第一个单元格必须是 ADT Name, 请确认是否从X平台导出来的ADT清单");
     std::set<std::string> adtLib;
-    for (int i = 2; i <= lisSheet.rowCount(); i++) {
-        adtLib.emplace(Xlsx::getCellValue(sheet.cell(i, 1)));
+    if (OpenXLSX::XLDocument doc; Xlsx::openXlDocument(doc, libXlsx)) {
+        log_error("Adt", "Failed to open lib xlsx file: " + libXlsx);
+        const auto libSheet = doc.workbook().worksheet(1);
+        if (Xlsx::getCellValue(libSheet.cell(1, 1)) != "ADT Name")
+            errors.emplace_back(
+                "[Error] conf目录下的excel文件第一个sheet的第一个单元格必须是 ADT Name, 请确认是否从X平台导出来的ADT清单");
+        for (int i = 2; i <= libSheet.rowCount(); i++) {
+            adtLib.emplace(Xlsx::getCellValue(libSheet.cell(i, 1)));
+        }
     }
-
+    //开始数据类型的检查
     int row = 2;
     log_debug("Adt", "[Info] sheet.rowCount()..." << sheet.rowCount());
     while (row <= sheet.rowCount()) {
@@ -442,7 +455,8 @@ void DataTypeConsistencyCheck::valueConsistencyCheck(const OpenXLSX::XLWorksheet
 }
 
 void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet& sheet, const int row) {
-    if (const auto baseType = Xlsx::getCellValue(sheet.cell(row, baseTypeCol)); !BASIC_TYPES.contains(baseType))
+    const auto baseType = Xlsx::getCellValue(sheet.cell(row, baseTypeCol));
+    if (!BASIC_TYPES.contains(baseType))
         errors.emplace_back("[Error] " + Core::numToCellAddress(row, baseTypeCol) +
                             " 基础数据类型不在支持的范围内，仅支持"
                             "{bool,uint8,uint16,uint32,uint64,sint8,"
@@ -495,12 +509,16 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
                                 ": 枚举或位域，此处建议保持为空，或者填写/或\\");
 
         // 枚举和位域校验
-        int maxRaw = -1;
-        if (methodType == compuMethodType::TEXT_TABLE) maxRaw = checkValueTable(valueTable, tableCellAddr);
+        int rawMax;
+        if (methodType == compuMethodType::TEXT_TABLE) rawMax = checkValueTable(valueTable, tableCellAddr);
 
-        if (methodType == compuMethodType::BIT_FIELD) maxRaw = checkBitField(valueTable, tableCellAddr);
+        if (methodType == compuMethodType::BIT_FIELD)
+            rawMax = static_cast<int>(std::pow(2, checkBitField(valueTable, tableCellAddr) - 1));
 
-        if (isSignal && maxRaw != -1) checkSignalLength(maxRaw, sigLen, row);
+        if (isSignal && rawMax != -1) {
+            // checkSignalLength(rawMax, sigLen, row);
+            checkSignalLength(rawMax, sigLen, baseType, row);
+        }
     } else if (methodType == compuMethodType::IDENTICAL || methodType == compuMethodType::LINEAR) {
         log_debug("Adt", std::to_string(row) + " " + compuMethodTypeToString(methodType));
         bool isMinNum, isMaxNum, isFactor, isOffset;
@@ -555,7 +573,8 @@ void DataTypeConsistencyCheck::checkMustDefinedCell(const OpenXLSX::XLWorksheet&
             // phy to raw value (phy = raw*factor + offset)
             const double rawMax = (max - o) / f;
             log_debug("ADT", Core::numToCellAddress(row, maxPhyCol) + " maxValue: " + std::to_string(rawMax));
-            checkSignalLength(rawMax, sigLen, row);
+            // checkSignalLength(rawMax, sigLen, row);
+            checkSignalLength(static_cast<int64_t>(rawMax), sigLen, baseType, row);
         }
     } else if (methodType == compuMethodType::NOT_SUPPORTED) {
         errors.emplace_back("[Error] " + tableCellAddr +
@@ -718,6 +737,56 @@ void DataTypeConsistencyCheck::checkSignalLength(const double maxValue, const in
                             std::to_string(static_cast<int>(ceil(log2(maxValue + 1)))));
 }
 
+void DataTypeConsistencyCheck::checkSignalLength(int64_t maxValue, const int length, const std::string& baseType, const int row) {
+    // 1. 长度太短（直接用 log2 比较）
+    if (const double requiredLen = std::log2(maxValue + 1); length < requiredLen) {
+        int recommendLen = static_cast<int>(std::ceil(requiredLen));
+        errors.emplace_back(
+            std::format("[Error] {}: 信号长度太短或无效，最小应该为：{}", Core::numToCellAddress(row, sigLenCol), recommendLen));
+    }
+
+    // 4. 长度太长（同样使用 log2 比较）
+    int optimalLen = length;
+    while (optimalLen > 0 && static_cast<int64_t>(std::pow(2, optimalLen - 1) - 1) >= maxValue) {
+        optimalLen--;
+    }
+    if (optimalLen < length) {
+        errors.emplace_back(std::format("[Warning] {}: 当前信号长度太长[{}], 有点浪费总线带宽，建议修改为：{}",
+                                        Core::numToCellAddress(row, sigLenCol),length, optimalLen));
+    }
+
+    // 类型定义...
+    std::vector<TypeInfo> types = {{"uint8", 0, UINT8_MAX, false},         {"uint16", 0, UINT16_MAX, false},
+                                   {"uint32", 0, UINT32_MAX, false},       {"uint64", 0, INT64_MAX, false},
+                                   {"sint8", INT8_MIN, INT8_MAX, true},    {"sint16", INT16_MIN, INT16_MAX, true},
+                                   {"sint32", INT32_MIN, INT32_MAX, true}, {"sint64", INT64_MIN, INT64_MAX, true}};
+
+    const auto it = std::ranges::find_if(types, [&baseType](const TypeInfo& t) { return t.name == baseType; });
+    if (it == types.end()) return;
+    const TypeInfo& currentType = *it;
+
+    // 2. maxValue超出baseType取值范围
+    if (maxValue < currentType.minVal || maxValue > currentType.maxVal) {
+        errors.emplace_back(std::format("[Error] {}: maxvalue {} 超过 baseType {} 的取值范围 [{}, {}]",
+                                        Core::numToCellAddress(row, baseTypeCol), maxValue, baseType, currentType.minVal,
+                                        currentType.maxVal));
+    }
+
+    // 3. 选用的base type类型过大
+    for (const auto& [name, minVal, maxVal, isSigned] : types) {
+        if (name == baseType) continue;
+        if (isSigned != currentType.isSigned) continue;
+        const bool isNarrower =
+            !currentType.isSigned ? currentType.maxVal > maxVal : currentType.minVal < minVal && currentType.maxVal > maxVal;
+        if (isNarrower && maxValue >= minVal && maxValue <= maxVal) {
+            errors.emplace_back(
+                std::format("[Warning] {}: 请确认 base type 是否合理，使用 {} 理论上可以满足 maxvalue = {} 的要求",
+                            Core::numToCellAddress(row, baseTypeCol), name, maxValue));
+            break;
+        }
+    }
+}
+
 /*=========================================Struct check=====================================*/
 void DataTypeConsistencyCheck::recordConsistencyCheck(const OpenXLSX::XLWorksheet& sheet, const int startRow, const int endRow) {
     std::list<int> numbers;
@@ -768,12 +837,11 @@ void DataTypeConsistencyCheck::recordConsistencyCheck(const OpenXLSX::XLWorkshee
         } else { // 引用数据类型
             // 检查引用是否有定义
             const std::string memTypeRef = Core::stringTrim(Xlsx::getCellValue(sheet.cell(row, memTypeRefCol)));
-
             if (memTypeRef.find("CRC") == std::string::npos ||
-                memTypeRef.find("RollingCntr") == std::string::npos && !dataTypeNames.contains(memTypeRef))
+                memTypeRef.find("RollgCntr") == std::string::npos && !dataTypeNames.contains(memTypeRef))
                 errors.emplace_back("[Error] " + Core::numToCellAddress(row, memTypeRefCol) + ": " + memTypeRef +
                                     " 结构体成员引用数据类型未在表格中定义");
-
+            //检查primitive type不使用的单元格
             unusedCellForRefType(sheet, row);
         }
     }

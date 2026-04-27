@@ -9,7 +9,12 @@
 #include <set>
 #include <string>
 #include <unordered_set>
-
+struct TypeInfo {
+    std::string name;
+    int64_t minVal;
+    int64_t maxVal;
+    bool isSigned;
+};
 class DataTypeConsistencyCheck {
     friend class ValueConsistencyCheck;
 
@@ -61,6 +66,7 @@ private:
     int checkValueTable(const std::string& valueTable, const std::string& cellAddress);
     int checkBitField(const std::string& valueTable, const std::string& cellAddress);
     void checkSignalLength(double maxValue, int len, int row);
+    void checkSignalLength(int64_t maxValue, int length, const std::string& baseType, int row);
 };
 
 #endif // DATATYPECONSISTENCYCHECK_H
